@@ -73,6 +73,57 @@ func TestCalculatorCalculate(t *testing.T) {
 	}
 }
 
+func TestCalculatorCalculateSupportsConfigurablePackSizes(t *testing.T) {
+	calculator, err := NewCalculator([]int{23, 31, 53})
+	if err != nil {
+		t.Fatalf("NewCalculator() error = %v", err)
+	}
+
+	result, err := calculator.Calculate(500000)
+	if err != nil {
+		t.Fatalf("Calculate() error = %v", err)
+	}
+
+	expected := []PackSummary{
+		{PackSize: 53, Count: 9429},
+		{PackSize: 31, Count: 7},
+		{PackSize: 23, Count: 2},
+	}
+
+	if result.TotalItems != 500000 {
+		t.Fatalf("TotalItems = %d, want 500000", result.TotalItems)
+	}
+
+	if result.Overfill != 0 {
+		t.Fatalf("Overfill = %d, want 0", result.Overfill)
+	}
+
+	if !reflect.DeepEqual(result.Packs, expected) {
+		t.Fatalf("Packs = %#v, want %#v", result.Packs, expected)
+	}
+}
+
+func TestCalculatorCalculateMinimizesPackCountAfterQuantity(t *testing.T) {
+	calculator, err := NewCalculator([]int{10, 25})
+	if err != nil {
+		t.Fatalf("NewCalculator() error = %v", err)
+	}
+
+	result, err := calculator.Calculate(30)
+	if err != nil {
+		t.Fatalf("Calculate() error = %v", err)
+	}
+
+	if result.TotalItems != 30 {
+		t.Fatalf("TotalItems = %d, want 30", result.TotalItems)
+	}
+
+	expected := []PackSummary{{PackSize: 10, Count: 3}}
+	if !reflect.DeepEqual(result.Packs, expected) {
+		t.Fatalf("Packs = %#v, want %#v", result.Packs, expected)
+	}
+}
+
 func TestCalculatorCalculateRejectsInvalidOrder(t *testing.T) {
 	calculator, err := NewCalculator([]int{250, 500})
 	if err != nil {

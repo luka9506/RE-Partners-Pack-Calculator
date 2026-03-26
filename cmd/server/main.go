@@ -11,6 +11,8 @@ import (
 )
 
 func main() {
+	// Keep operational settings external so the same binary works locally,
+	// in containers, and on hosted platforms without rebuilds.
 	configPath := envOrDefault("PACK_CONFIG_PATH", "config/packs.json")
 	listenAddr := envOrDefault("PORT", "8080")
 

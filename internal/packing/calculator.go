@@ -33,6 +33,7 @@ func NewCalculator(packSizes []int) (*Calculator, error) {
 		return nil, errors.New("at least one pack size is required")
 	}
 
+	// Normalize once so the search can treat pack sizes as an ordered set.
 	normalized := make([]int, len(packSizes))
 	copy(normalized, packSizes)
 	sort.Ints(normalized)
@@ -54,11 +55,16 @@ func (c *Calculator) Calculate(orderQuantity int) (Result, error) {
 		return Result{}, errors.New("order quantity must be greater than zero")
 	}
 
+	// Any optimal answer must land before orderQuantity+maxPack because one extra
+	// largest pack is always enough to cross the target from some smaller total.
 	maxPack := c.packSizes[len(c.packSizes)-1]
 	upperBound := orderQuantity + maxPack - 1
 	bestByTotal := make([]*candidate, upperBound+1)
 	bestByTotal[0] = &candidate{counts: make([]int, len(c.packSizes))}
 
+	// For each reachable total, keep only the solution with the fewest packs.
+	// Scanning totals upward afterwards guarantees that the first reachable total
+	// at or above the order quantity also minimizes shipped items.
 	for total := 0; total <= upperBound; total++ {
 		current := bestByTotal[total]
 		if current == nil {
@@ -100,6 +106,8 @@ func (c *Calculator) Calculate(orderQuantity int) (Result, error) {
 }
 
 func (c *Calculator) buildResult(orderQuantity int, choice *candidate) Result {
+	// Return packs largest-first because that is the clearest presentation for
+	// both the UI and API consumers.
 	packs := make([]PackSummary, 0, len(c.packSizes))
 	for index := len(c.packSizes) - 1; index >= 0; index-- {
 		count := choice.counts[index]

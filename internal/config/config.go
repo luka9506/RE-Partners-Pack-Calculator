@@ -24,6 +24,8 @@ func Load(path string) (AppConfig, error) {
 		return AppConfig{}, fmt.Errorf("decode config: %w", err)
 	}
 
+	// Validation also sorts the pack sizes so the rest of the application can use
+	// the configuration without repeating normalization logic.
 	if err := cfg.Validate(); err != nil {
 		return AppConfig{}, err
 	}
@@ -36,6 +38,7 @@ func (c *AppConfig) Validate() error {
 		return errors.New("config must include at least one pack size")
 	}
 
+	// Reject malformed configuration early so the service fails fast on startup.
 	seen := make(map[int]struct{}, len(c.PackSizes))
 	for _, size := range c.PackSizes {
 		if size <= 0 {

@@ -79,6 +79,8 @@ func (s *Server) handleIndex() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		data := pageData{PackSizes: s.packSizes}
 		if r.Method == http.MethodPost {
+			// The HTML form reuses the same calculator as the JSON API so both entry
+			// points always follow identical packing rules.
 			quantity, err := strconv.Atoi(r.FormValue("quantity"))
 			data.Quantity = quantity
 			if err != nil {
