@@ -26,7 +26,7 @@ func main() {
 		log.Fatalf("create calculator: %v", err)
 	}
 
-	server, err := httpapi.NewServer(calculator, cfg.PackSizes)
+	server, err := httpapi.NewServer(calculator, configPath, cfg.PackSizes)
 	if err != nil {
 		log.Fatalf("create server: %v", err)
 	}

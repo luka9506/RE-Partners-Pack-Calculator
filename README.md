@@ -113,6 +113,40 @@ Response:
 }
 ```
 
+### Get current pack configuration
+
+`GET /api/config/packs`
+
+Response:
+
+```json
+{
+  "pack_sizes": [250, 500, 1000, 2000, 5000]
+}
+```
+
+### Update pack configuration
+
+`PUT /api/config/packs`
+
+Request:
+
+```json
+{
+  "pack_sizes": [23, 31, 53]
+}
+```
+
+Response:
+
+```json
+{
+  "pack_sizes": [23, 31, 53]
+}
+```
+
+A successful update is validated, written back to the configured JSON file, and applied immediately by the running server. Invalid payloads return `400`, and persistence failures return `500` without changing the active calculator.
+
 ## Tests
 
 ```bash
@@ -153,6 +187,20 @@ curl -X POST http://localhost:8080/api/calculate \
   -d '{"quantity":501}'
 ```
 
+Fetch the current pack sizes:
+
+```bash
+curl http://localhost:8080/api/config/packs
+```
+
+Replace the active pack sizes:
+
+```bash
+curl -X PUT http://localhost:8080/api/config/packs \
+  -H "Content-Type: application/json" \
+  -d '{"pack_sizes":[23,31,53]}'
+```
+
 Run the container with a custom configuration file:
 
 ```bash
@@ -167,8 +215,8 @@ The container sets `PACK_CONFIG_PATH=/app/config/packs.json` by default so the b
 ## Architecture notes
 
 - The packing algorithm is isolated from HTTP concerns so it can be tested independently.
-- Configuration is loaded once at startup and validated before the server begins accepting requests.
-- The browser UI and JSON API use the same calculator instance, which prevents rule drift between interfaces.
+- Configuration is loaded at startup and can also be updated through the config API; successful updates are validated, persisted, and swapped into the running server immediately.
+- The browser UI and JSON API use the same calculator state, which prevents rule drift between interfaces.
 - There is no persistence layer because the assessment only requires stateless calculation. If this were extended into a production order service, persistence would be a reasonable next step for storing order history, configuration versions, or audit data.
 
 ## Deployment recommendation

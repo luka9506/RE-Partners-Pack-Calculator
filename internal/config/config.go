@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 )
 
@@ -31,6 +32,47 @@ func Load(path string) (AppConfig, error) {
 	}
 
 	return cfg, nil
+}
+
+func Save(path string, cfg AppConfig) error {
+	copyCfg := AppConfig{PackSizes: append([]int(nil), cfg.PackSizes...)}
+	if err := copyCfg.Validate(); err != nil {
+		return err
+	}
+
+	payload, err := json.MarshalIndent(copyCfg, "", "  ")
+	if err != nil {
+		return fmt.Errorf("encode config: %w", err)
+	}
+	payload = append(payload, '\n')
+
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return fmt.Errorf("create config directory: %w", err)
+	}
+
+	tempFile, err := os.CreateTemp(filepath.Dir(path), "packs-*.json")
+	if err != nil {
+		return fmt.Errorf("create temp config: %w", err)
+	}
+	tempPath := tempFile.Name()
+
+	if _, err := tempFile.Write(payload); err != nil {
+		_ = tempFile.Close()
+		_ = os.Remove(tempPath)
+		return fmt.Errorf("write config: %w", err)
+	}
+
+	if err := tempFile.Close(); err != nil {
+		_ = os.Remove(tempPath)
+		return fmt.Errorf("close temp config: %w", err)
+	}
+
+	if err := os.Rename(tempPath, path); err != nil {
+		_ = os.Remove(tempPath)
+		return fmt.Errorf("replace config: %w", err)
+	}
+
+	return nil
 }
 
 func (c *AppConfig) Validate() error {
